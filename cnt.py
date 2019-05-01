@@ -184,10 +184,9 @@ def collect_cnt_person(alreadyQue, Mode):
                     sql = "INSERT INTO departure_record(ID, DepartureTime, Picture, Name, Date, Member) VALUES (%s, %s, %s, %s, %s, %s)"
                 # 生成存入数据库内的各条数据信息
                 # 图片
-                cv2.imwrite("swapPic/{}.jpg".format(face.id),
-                            face.face_ls[len(face.face_ls)//2][:, :, ::-1])
-                fp = open("swapPic/{}.jpg".format(face.id), 'rb')
-                img = fp.read()
+                img = face.face_ls[len(face.face_ls)//2][:, :, ::-1]
+                img = cv2.imencode('.jpg', img)[1]
+                img = np.array(img).tostring()
                 # 名字(日期+cnt, 用来在网站上显示)
                 Name = "Vistor"
                 if member_idx >= 0:
