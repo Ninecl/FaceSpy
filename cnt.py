@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import pickle
-from datetime import datetime as date
+import datetime
 import numpy as np
 import pymysql
 import cv2
@@ -27,7 +27,7 @@ def load_graph():
 
 
 def now_time():
-    now = date.now()
+    now = datetime.datetime.now()
     year = str(now.year)
     month = str('%02d' % now.month)
     day = str('%02d' % now.day)
@@ -87,7 +87,7 @@ def collect_cnt_person(alreadyQue, Mode):
     
 
     # 加载MTCNN图和分类文件
-    with open("models/20190423_knn_16people.pkl", "rb") as infile:
+    with open("models/knn_classifier.pkl", "rb") as infile:
         model = pickle.load(infile)
         embs = model["embs"]
         labels = model["labels"]
@@ -108,6 +108,8 @@ def collect_cnt_person(alreadyQue, Mode):
     nowTime = now_time()
     # 记录读取列表时空的次数
     emptyCnt = 0
+    # 记录每天凌晨2点半是否更新过模型
+    model_updated = False
 
     # 无限循环读列表（注意，这个操作每两秒一次，最后设置了阻塞2s）
     while True:
@@ -119,6 +121,16 @@ def collect_cnt_person(alreadyQue, Mode):
         nowTime = now_time()
         if lastTime[6: 8] != nowTime[6: 8]:
             id_cnt = 0
+        # 然后判断在每天凌晨2点半时重新读入更新过的模型
+        if nowTime[8: 10] == "01" and nowTime[10: 12] == "30" and not model_updated: 
+            with open("models/knn_classifier.pkl", "rb") as infile:
+                model = pickle.load(infile)
+                embs = model["embs"]
+                labels = model["labels"]
+                classes_num = model["classes"]
+            model_updated = True
+        elif model_updated and nowTime[8: 10] != "01" and nowTime[10: 12] != "30":
+            model_updated = False
 
         emptyf = alreadyQue.empty()
         if emptyf:
@@ -166,6 +178,8 @@ def collect_cnt_person(alreadyQue, Mode):
                         pro_ls[labels[min_idx]] += 1
                     # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
                     if min_dis <= 0.50:
+                        update_img = face.face_ls[i][:, :, ::-1]
+                        update_img = cv2.resize(img, (160, 160))
                         train_dataset_path = "./members/dataset/"
                         min_idx = np.where(dis_ls == min_dis)[0][0]
                         label = labels[min_idx]
@@ -174,14 +188,14 @@ def collect_cnt_person(alreadyQue, Mode):
                             files = os.listdir(train_dataset_path + "{}/".format(label))
                             if os.path.exists(train_dataset_path + "{}/".format(label) + "20.jpg"):
                                 os.remove(train_dataset_path + "{}/".format(label) + "20.jpg")
-                            for i in range(21, 50):
-                                old_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(i)
+                            for j in range(21, 50):
+                                old_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(j)
                                 if os.path.exists(old_filename):
-                                    new_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(i-1)
+                                    new_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(j-1)
                                     os.rename(old_filename, new_filename)
-                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), face.face_ls[i][:, :, ::-1])
+                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), update_img)
                         else:
-                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), face.face_ls[i][:, :, ::-1])
+                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), update_img)
                 idx = np.where(pro_ls == np.max(pro_ls))[0][0]
                 print(pro_ls)
                 # print(pro_ls)

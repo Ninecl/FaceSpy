@@ -14,7 +14,7 @@ import scipy
 import PIL
 from sklearn.svm import SVC
 
-def main(mode, data_dir, model, classifier_filename,
+def train_knn_model(mode, data_dir, model, classifier_filename,
         image_size = 160, batch_size = 90,
         seed = 666, use_split_dataset = False):
   
@@ -81,7 +81,7 @@ def main(mode, data_dir, model, classifier_filename,
 def split_dataset(dataset, min_nrof_images_per_class, nrof_train_images_per_class):
     train_set = []
     test_set = []
-    for cls in dataset:
+    for cls in datzhixingaset:
         paths = cls.image_paths
         # Remove classes with less than min_nrof_images_per_class
         if len(paths)>=min_nrof_images_per_class:
@@ -122,5 +122,3 @@ def parse_arguments(argv):
     
     return parser.parse_args(argv)
 
-if __name__ == '__main__':
-    main("TRAIN", "./members/dataset", "./models/20180402-114759.pb", "./models/20190509.pkl")
