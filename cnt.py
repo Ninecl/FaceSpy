@@ -179,7 +179,7 @@ def collect_cnt_person(alreadyQue, Mode):
                     # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
                     if min_dis <= 0.50:
                         update_img = face.face_ls[i][:, :, ::-1]
-                        update_img = cv2.resize(img, (160, 160))
+                        update_img = cv2.resize(update_img, (160, 160))
                         train_dataset_path = "./members/dataset/"
                         label = labels[min_idx]
                         imgs_cnt = len(os.listdir(train_dataset_path + "{}/".format(label)))
