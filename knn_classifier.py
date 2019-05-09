@@ -14,7 +14,32 @@ import scipy
 import PIL
 from sklearn.svm import SVC
 
-def train_knn_model(mode, data_dir, model, classifier_filename,
+def get_paths_and_labels_and_classes():
+    paths = []
+    labels = []
+    standard_imgs_path = "./imgs/train_imgs/standard_imgs/"
+    update_imgs_path = "./imgs/train_imgs/update_imgs/"
+    classes = len(os.listdir(standard_imgs_path))
+
+    # 将每个人的标准照片加入paths和labels中
+    for i in range(classes):
+        standard_img_path = standard_imgs_path + "{}/".format(i)
+        for j in range(len(os.listdir(standard_img_path))):
+            paths.append(standard_img_path + "{}.jpg".format(j))
+            labels.append(i)
+
+    # 将每个人的更新照片(如果有的话)加入paths和labels中
+    for i in range(classes):
+        update_img_path = update_imgs_path + "{}/".format(i)
+        if os.path.exists(update_img_path):
+            for j in range(len(os.listdir(update_img_path))):
+                paths.append(update_img_path + "{}.jpg".format(j))
+                labels.append(i)
+        
+    return paths, labels, classes
+
+
+def train_knn_model(data_dir, model, classifier_filename,
         image_size = 160, batch_size = 90,
         seed = 666, use_split_dataset = False):
   
@@ -22,26 +47,11 @@ def train_knn_model(mode, data_dir, model, classifier_filename,
       
         with tf.Session() as sess:
             
-            np.random.seed(seed=seed)
+            paths, labels, classes = get_paths_and_labels_and_classes()
+            print(paths)
+            print(labels)
             
-            if use_split_dataset:
-                dataset_tmp = facenet.get_dataset(data_dir)
-                train_set, test_set = split_dataset(dataset_tmp, args.min_nrof_images_per_class, args.nrof_train_images_per_class)
-                if (args.mode=='TRAIN'):
-                    dataset = train_set
-                elif (args.mode=='CLASSIFY'):
-                    dataset = test_set
-            else:
-                dataset = facenet.get_dataset(data_dir)
-
-            # Check that there are at least one training image per class
-            for cls in dataset:
-                assert(len(cls.image_paths)>0, 'There must be at least one image for each class in the dataset')            
-
-                 
-            paths, labels = facenet.get_image_paths_and_labels(dataset)
-            
-            print('Number of classes: %d' % len(dataset))
+            print('Number of classes: %d' % classes)
             print('Number of images: %d' % len(paths))
             
             # Load the model
@@ -69,7 +79,7 @@ def train_knn_model(mode, data_dir, model, classifier_filename,
             
             classifier_filename_exp = os.path.expanduser(classifier_filename)
 
-            model = {"embs": emb_array, "labels": labels, "classes": len(dataset)}
+            model = {"embs": emb_array, "labels": labels, "classes": classes}
             with open(classifier_filename_exp, 'wb') as outfile:
                 pickle.dump(model, outfile)
             with open(classifier_filename_exp, 'rb') as infile:
@@ -122,3 +132,6 @@ def parse_arguments(argv):
     
     return parser.parse_args(argv)
 
+
+if __name__ == "__main__":
+    train_knn_model("./imgs/train_imgs", "./models/20180402-114759.pb", "./models/try.pkl") 

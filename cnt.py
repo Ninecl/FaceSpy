@@ -93,6 +93,14 @@ def collect_cnt_person(alreadyQue, Mode):
         labels = model["labels"]
         classes_num = model["classes"]
 
+    # 加载模型中对应的人名
+    names = []
+    fp = open("./imgs/members.txt")
+    lines = fp.readlines()
+    for line in lines:
+        line = line.split(' ')
+        names.append(line[2])
+
     # 创建两个列表，从共享队列中读出的人脸数据经过match后均存放在这两个列表中
     allPassList = []
     # 最终记录有哪些人在内的列表
@@ -173,28 +181,27 @@ def collect_cnt_person(alreadyQue, Mode):
                     dis_ls = np.linalg.norm(embs-emb, axis=1)
                     min_dis = np.min(dis_ls)
                     min_idx = np.where(dis_ls == min_dis)[0][0]
-                    print(min_dis, min_idx)
+                    label = labels[min_idx]
+                    print(min_dis, min_idx, label)
                     if min_dis <= 0.70:
                         pro_ls[labels[min_idx]] += 1
                     # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
-                    if min_dis <= 0.50:
+                    if min_dis <= 0.50 and min_idx >= 20 * label and min_idx < 20 * label + 20:
                         update_img = face.face_ls[i][:, :, ::-1]
                         update_img = cv2.resize(update_img, (160, 160))
-                        train_dataset_path = "./members/dataset/"
-                        label = labels[min_idx]
-                        imgs_cnt = len(os.listdir(train_dataset_path + "{}/".format(label)))
-                        if imgs_cnt >= 50:
-                            files = os.listdir(train_dataset_path + "{}/".format(label))
-                            if os.path.exists(train_dataset_path + "{}/".format(label) + "20.jpg"):
-                                os.remove(train_dataset_path + "{}/".format(label) + "20.jpg")
-                            for j in range(21, 50):
-                                old_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(j)
-                                if os.path.exists(old_filename):
-                                    new_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(j-1)
-                                    os.rename(old_filename, new_filename)
-                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), update_img)
+                        update_imgs_path = "./imgs/train_imgs/update_imgs/"
+                        update_img_path = update_imgs_path + "{}/".format(label)
+                        if not os.path.exists(update_img_path):
+                            os.makedirs(update_img_path)
+
+                        imgs_cnt = len(os.listdir(update_img_path))
+                        if imgs_cnt >= 30:
+                            first_file = update_img_path + os.listdir(update_img_path)[0]
+                            if os.path.exists(first_file):
+                                os.remove(first_file)
+                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime), update_img)
                         else:
-                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), update_img)
+                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime), update_img)
                 idx = np.where(pro_ls == np.max(pro_ls))[0][0]
                 print(pro_ls)
                 # print(pro_ls)
@@ -202,9 +209,9 @@ def collect_cnt_person(alreadyQue, Mode):
                 if pro_ls[idx] >= len(face.embs) // 3 * 2:
                     member_idx = idx
                     if Mode == "IN":
-                        print("Member {} in.".format(member_idx))
+                        print("Member {} in.".format(names[member_idx]))
                     else:
-                        print("Member {} out.".format(member_idx))
+                        print("Member {} out.".format(names[member_idx]))
                 # 将这条数据放入person_in_ls
                 # face_record.append(member_idx)
                 # person_in_ls.append(face_record)
@@ -224,9 +231,7 @@ def collect_cnt_person(alreadyQue, Mode):
                 # 名字(日期+cnt, 用来在网站上显示)
                 Name = "Vistor"
                 if member_idx >= 0:
-                    cursor.execute('select Name from members where ID = %s' % str(member_idx))
-                    data = cursor.fetchone()
-                    Name = "Member_" + str(member_idx)
+                    Name = names[member_idx]
                 # 日期
                 Date = face.time[0: 8]
                 # 时间
