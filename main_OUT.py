@@ -8,6 +8,7 @@ import video_recieve
 import video_detect
 import video_process
 import cnt
+import updateModel
 import os
 
 
@@ -45,6 +46,7 @@ def main():
     pDetectRight = Process(target=video_detect.detect, args=(rightFrameQue, rightVideoQue, "OUT", rightVideoEvent))
     pProcessRight = Process(target=video_process.process, args=(rightVideoQue, alreadyQue, "OUT", "RIGHT", rightVideoEvent))
     pCnt = Process(target=cnt.collect_cnt_person, args=(alreadyQue, "OUT"))
+    pUpdate = Process(target=updateModel.main)
     # 启动进程
     pRecieveMiddle.start()
     pDetectMiddle.start()
@@ -56,6 +58,7 @@ def main():
     pDetectRight.start()
     pProcessRight.start()
     pCnt.start()
+    pUpdate.start()
     # join进程
     pRecieveMiddle.join()
     pDetectMiddle.join()
@@ -67,6 +70,7 @@ def main():
     pDetectRight.join()
     pProcessRight.join()
     pCnt.join()
+    pUpdate.join()
 
 
 if __name__ == '__main__':
