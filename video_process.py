@@ -112,7 +112,7 @@ def check(face, mode, pos, cnt):
         if face.front_flags[i]:
             cv2.imwrite(dir_path + "/" + str(i) + ".jpg", face.face_ls[i][:, :, ::-1])
         else:
-            cv2.imwrite(dir_path + "/" + str(i) + ".jpg", face.face_ls[i])
+            cv2.imwrite(dir_path + "/" + str(i) + "_not_front.jpg", face.face_ls[i][:, :, ::-1])
 
     return check
 

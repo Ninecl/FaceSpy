@@ -7,6 +7,7 @@ import pymysql
 import cv2
 import tensorflow as tf
 import facenet
+import os
 
 
 def load_graph():
@@ -83,9 +84,7 @@ def collect_cnt_person(alreadyQue, Mode):
     # 加载数据库配置文件
     with open("./dbset.pkl", 'rb') as infile:
         dbSet = pickle.load(infile)
-    # 连接数据库，当识别出某人离开时，对数据库中的记录进行操作
-    conn = pymysql.connect("39.98.90.118", "zyf", "zyf123456", "face_recognition", charset="utf8")
-    cursor = conn.cursor()
+    
 
     # 加载MTCNN图和分类文件
     with open("models/20190423_knn_16people.pkl", "rb") as infile:
@@ -112,6 +111,9 @@ def collect_cnt_person(alreadyQue, Mode):
 
     # 无限循环读列表（注意，这个操作每两秒一次，最后设置了阻塞2s）
     while True:
+        # 连接数据库，当识别出某人离开时，对数据库中的记录进行操作, 这里每次采用一个新的连接，否则会出现问题
+        conn = pymysql.connect("39.98.90.118", "zyf", "zyf123456", "face_recognition", charset="utf8")
+        cursor = conn.cursor()
         # 首先判断是否是新的一天, 如果是, 则id_cnt重置
         lastTime = nowTime
         nowTime = now_time()
@@ -154,18 +156,37 @@ def collect_cnt_person(alreadyQue, Mode):
                 # 检查这张人脸是否是成员
                 pro_ls = np.zeros(classes_num)
                 member_idx = -1
-                for emb in face.embs:
+                for i in range(len(face.embs)):
+                    emb = face.embs[i]
                     dis_ls = np.linalg.norm(embs-emb, axis=1)
-                    print(dis_ls)
                     min_dis = np.min(dis_ls)
+                    print(min_dis)
                     if min_dis <= 0.80:
                         min_idx = np.where(dis_ls == min_dis)[0][0]
                         pro_ls[labels[min_idx]] += 1
+                    # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
+                    if min_dis <= 0.50:
+                        train_dataset_path = "./members/dataset/"
+                        min_idx = np.where(dis_ls == min_dis)[0][0]
+                        label = labels[min_idx]
+                        imgs_cnt = len(os.listdir(train_dataset_path + "{}/".format(label)))
+                        if imgs_cnt >= 50:
+                            files = os.listdir(train_dataset_path + "{}/".format(label))
+                            if os.path.exists(train_dataset_path + "{}/".format(label) + "20.jpg"):
+                                os.remove(train_dataset_path + "{}/".format(label) + "20.jpg")
+                            for i in range(21, 50):
+                                old_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(i)
+                                if os.path.exists(old_filename):
+                                    new_filename = train_dataset_path + "{}/".format(label) + "{}.jpg".format(i-1)
+                                    os.rename(old_filename, new_filename)
+                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), face.face_ls[i][:, :, ::-1])
+                        else:
+                            cv2.imwrite("./members/dataset/{}/{}.jpg".format(label, imgs_cnt), face.face_ls[i][:, :, ::-1])
                 idx = np.where(pro_ls == np.max(pro_ls))[0][0]
                 print(pro_ls)
                 # print(pro_ls)
                 # print(len(predictions))
-                if pro_ls[idx] >= len(face.embs) // 2:
+                if pro_ls[idx] >= len(face.embs) // 3 * 2:
                     member_idx = idx
                     if Mode == "IN":
                         print("Member {} in.".format(member_idx))
@@ -205,7 +226,7 @@ def collect_cnt_person(alreadyQue, Mode):
                     else:
                         sql = "update members set inside = 0 where ID = {}".format(member_idx)
                     cursor.execute(sql)
-                conn.commit()
+            conn.commit()
             allPassList.clear()
             leftNoneCnt = 0
             rightNoneCnt = 0
@@ -270,4 +291,5 @@ def collect_cnt_person(alreadyQue, Mode):
         else:
             print("There are {} person(s) have came out.".format(id_cnt))
         # print(person_in_ls)
+        conn.close()
         time.sleep(2)

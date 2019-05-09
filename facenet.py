@@ -341,6 +341,7 @@ def get_image_paths(facedir):
     image_paths = []
     if os.path.isdir(facedir):
         images = os.listdir(facedir)
+        images.sort(key = lambda x:int(re.match("(\d+)", x).group(1)))
         image_paths = [os.path.join(facedir,img) for img in images]
     return image_paths
 

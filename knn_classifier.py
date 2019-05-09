@@ -11,25 +11,28 @@ import sys
 import math
 import pickle
 import scipy
+import PIL
 from sklearn.svm import SVC
 
-def main(args):
+def main(mode, data_dir, model, classifier_filename,
+        image_size = 160, batch_size = 90,
+        seed = 666, use_split_dataset = False):
   
     with tf.Graph().as_default():
       
         with tf.Session() as sess:
             
-            np.random.seed(seed=args.seed)
+            np.random.seed(seed=seed)
             
-            if args.use_split_dataset:
-                dataset_tmp = facenet.get_dataset(args.data_dir)
+            if use_split_dataset:
+                dataset_tmp = facenet.get_dataset(data_dir)
                 train_set, test_set = split_dataset(dataset_tmp, args.min_nrof_images_per_class, args.nrof_train_images_per_class)
                 if (args.mode=='TRAIN'):
                     dataset = train_set
                 elif (args.mode=='CLASSIFY'):
                     dataset = test_set
             else:
-                dataset = facenet.get_dataset(args.data_dir)
+                dataset = facenet.get_dataset(data_dir)
 
             # Check that there are at least one training image per class
             for cls in dataset:
@@ -43,7 +46,7 @@ def main(args):
             
             # Load the model
             print('Loading feature extraction model')
-            facenet.load_model(args.model)
+            facenet.load_model(model)
             
             # Get input and output tensors
             images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
@@ -54,17 +57,17 @@ def main(args):
             # Run forward pass to calculate embeddings
             print('Calculating features for images')
             nrof_images = len(paths)
-            nrof_batches_per_epoch = int(math.ceil(1.0*nrof_images / args.batch_size))
+            nrof_batches_per_epoch = int(math.ceil(1.0*nrof_images / batch_size))
             emb_array = np.zeros((nrof_images, embedding_size))
             for i in range(nrof_batches_per_epoch):
-                start_index = i*args.batch_size
-                end_index = min((i+1)*args.batch_size, nrof_images)
+                start_index = i*batch_size
+                end_index = min((i+1)*batch_size, nrof_images)
                 paths_batch = paths[start_index:end_index]
-                images = facenet.load_data(paths_batch, False, False, args.image_size)
+                images = facenet.load_data(paths_batch, False, False, image_size)
                 feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                 emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
             
-            classifier_filename_exp = os.path.expanduser(args.classifier_filename)
+            classifier_filename_exp = os.path.expanduser(classifier_filename)
 
             model = {"embs": emb_array, "labels": labels, "classes": len(dataset)}
             with open(classifier_filename_exp, 'wb') as outfile:
@@ -120,4 +123,4 @@ def parse_arguments(argv):
     return parser.parse_args(argv)
 
 if __name__ == '__main__':
-    main(parse_arguments(sys.argv[1:]))
+    main("TRAIN", "./members/dataset", "./models/20180402-114759.pb", "./models/20190509.pkl")
