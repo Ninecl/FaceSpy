@@ -24,16 +24,18 @@ def get_paths_and_labels_and_classes():
     # 将每个人的标准照片加入paths和labels中
     for i in range(classes):
         standard_img_path = standard_imgs_path + "{}/".format(i)
-        for j in range(len(os.listdir(standard_img_path))):
-            paths.append(standard_img_path + "{}.jpg".format(j))
+        files = os.listdir(standard_img_path)
+        for file in files:
+            paths.append(standard_img_path + file)
             labels.append(i)
 
     # 将每个人的更新照片(如果有的话)加入paths和labels中
     for i in range(classes):
         update_img_path = update_imgs_path + "{}/".format(i)
+        files = os.listdir(update_img_path)
         if os.path.exists(update_img_path):
-            for j in range(len(os.listdir(update_img_path))):
-                paths.append(update_img_path + "{}.jpg".format(j))
+            for file in files:
+                paths.append(update_img_path + file)
                 labels.append(i)
         
     return paths, labels, classes
