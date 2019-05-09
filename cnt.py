@@ -206,7 +206,7 @@ def collect_cnt_person(alreadyQue, Mode):
                 print(pro_ls)
                 # print(pro_ls)
                 # print(len(predictions))
-                if pro_ls[idx] >= len(face.embs) // 3 * 2:
+                if pro_ls[idx] >= len(face.embs) // 2:
                     member_idx = idx
                     if Mode == "IN":
                         print("Member {} in.".format(names[member_idx]))
