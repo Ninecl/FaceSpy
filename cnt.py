@@ -172,16 +172,15 @@ def collect_cnt_person(alreadyQue, Mode):
                     emb = face.embs[i]
                     dis_ls = np.linalg.norm(embs-emb, axis=1)
                     min_dis = np.min(dis_ls)
-                    print(min_dis)
-                    if min_dis <= 0.80:
-                        min_idx = np.where(dis_ls == min_dis)[0][0]
+                    min_idx = np.where(dis_ls == min_dis)[0][0]
+                    print(min_dis, min_idx)
+                    if min_dis <= 0.70:
                         pro_ls[labels[min_idx]] += 1
                     # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
                     if min_dis <= 0.50:
                         update_img = face.face_ls[i][:, :, ::-1]
                         update_img = cv2.resize(img, (160, 160))
                         train_dataset_path = "./members/dataset/"
-                        min_idx = np.where(dis_ls == min_dis)[0][0]
                         label = labels[min_idx]
                         imgs_cnt = len(os.listdir(train_dataset_path + "{}/".format(label)))
                         if imgs_cnt >= 50:
