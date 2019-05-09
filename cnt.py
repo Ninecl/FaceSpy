@@ -199,9 +199,9 @@ def collect_cnt_person(alreadyQue, Mode):
                             first_file = update_img_path + os.listdir(update_img_path)[0]
                             if os.path.exists(first_file):
                                 os.remove(first_file)
-                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime), update_img)
+                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime+str(min_idx)), update_img)
                         else:
-                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime), update_img)
+                            cv2.imwrite(update_img_path + "{}.jpg".format(nowTime+str(min_idx)), update_img)
                 idx = np.where(pro_ls == np.max(pro_ls))[0][0]
                 print(pro_ls)
                 # print(pro_ls)
