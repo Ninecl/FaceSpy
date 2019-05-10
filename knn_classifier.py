@@ -32,8 +32,8 @@ def get_paths_and_labels_and_classes():
     # 将每个人的更新照片(如果有的话)加入paths和labels中
     for i in range(classes):
         update_img_path = update_imgs_path + "{}/".format(i)
-        files = os.listdir(update_img_path)
         if os.path.exists(update_img_path):
+            files = os.listdir(update_img_path)
             for file in files:
                 paths.append(update_img_path + file)
                 labels.append(i)
@@ -136,4 +136,4 @@ def parse_arguments(argv):
 
 
 if __name__ == "__main__":
-    train_knn_model("./imgs/train_imgs", "./models/20180402-114759.pb", "./models/try.pkl") 
+    train_knn_model("./imgs/train_imgs", "./models/20180402-114759.pb", "./models/knn_classifier.pkl") 

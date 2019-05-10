@@ -234,7 +234,7 @@ def match_faces(faces_emb_pos):
 
         # 结合计算出的欧式距离和位置预判判断是否是跟踪对象
         if len(faces_in_camera[y].path) < 3:
-            if minnum < 0.8:
+            if minnum < 0.85:
                 match_f = True
             else:
                 continue
