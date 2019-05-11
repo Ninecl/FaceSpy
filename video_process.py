@@ -136,7 +136,7 @@ def calculate_alpha(emb, ls):
         compare_len = min(len(ls), 10)
         for e in ls[-compare_len:]:
             dis_ls.append(np.linalg.norm(emb - e))
-        dis = alpha(dis_ls, 0.75)
+        dis = alpha(dis_ls, 0.5)
     return dis
 
 
@@ -245,7 +245,7 @@ def match_faces(faces_emb_pos):
             print("dx + dy: {}".format(dis))
             if minnum <= 0.8 or dis <= 10:
                 match_f = True
-            elif minnum <= 1.00 and dis <= 50:
+            elif minnum <= 1.00 and dis <= 100:
                 match_f = True
 
         if match_f:

@@ -8,7 +8,7 @@ def main():
     while True:
         now = datetime.datetime.now()
         if now.hour == 1:
-            knn_classifier.train_knn_model("TRAIN", "./members/dataset", "./models/20180402-114759.pb", "./models/knn_classifier.pkl")
+            knn_classifier.train_knn_model("./imgs/train_imgs", "./models/20180402-114759.pb", "./models/knn_classifier.pkl")
         time.sleep(3600)
 
 
