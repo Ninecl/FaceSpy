@@ -9,9 +9,6 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import align.detect_face
-import align.detect_face_c
-import face_recognition
-from numba import jit
 import time
 
 

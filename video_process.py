@@ -13,7 +13,6 @@ import facenet
 import numpy as np
 import align.detect_face
 import time
-from numba import jit
 
 
 # 定义颜色
@@ -71,14 +70,14 @@ class A_face(object):
 
 
 def check(face, mode, pos, cnt):
-    check = True
+    check = False
     dir_path = "pics_history/"
 
     if mode == "IN":
         dir_path += "IN/"
         if pos == "RIGHT":
             dir_path += "Right/" + face.time + '_' + str(cnt)
-            if face.path[0][0] >= 900 and face.path[-1][0] <= 600:
+            if face.path[0][0] >= 900 and face.path[-1][0] <= 800:
                 check = True
         elif pos == "MIDDLE":
             dir_path += "Middle/" + face.time + '_' + str(cnt)
@@ -86,21 +85,21 @@ def check(face, mode, pos, cnt):
                 check = True
         elif pos == "LEFT":
             dir_path += "Left/" + face.time + '_' + str(cnt)
-            if face.path[0][0] <= 400 and face.path[-1][0] >= 680:
+            if face.path[0][0] <= 200 and face.path[-1][0] >= 400:
                 check = True
     else:
         dir_path += "OUT/"
-        if pos == "RIGHT":
+        if pos == "LEFT":
             dir_path += "Right/" + face.time + '_' + str(cnt)
-            if face.path[0][0] >= 900 and face.path[-1][0] <= 600:
+            if face.path[0][0] <= 300 and face.path[-1][0] >= 500:
                 check = True
         elif pos == "MIDDLE":
             dir_path += "Middle/" + face.time + '_' + str(cnt)
-            if face.path[0][1] <= 200 and face.path[-1][1] >= 500:
+            if face.path[0][1] <= 300 and face.path[-1][1] >= 550:
                 check = True
-        elif pos == "LEFT":
+        elif pos == "RIGHT":
             dir_path += "Left/" + face.time + '_' + str(cnt)
-            if face.path[0][0] <= 400 and face.path[-1][0] >= 680:
+            if face.path[0][0] >= 1000 and face.path[-1][0] <= 800:
                 check = True
 
 
@@ -128,7 +127,6 @@ def alpha(ls, alp):
         return res
 
 
-@jit
 # 封装alp算法，对一系列人脸照片中的近10张计算alp值
 def calculate_alpha(emb, ls):
     for i in range(len(ls)):
@@ -136,7 +134,7 @@ def calculate_alpha(emb, ls):
         compare_len = min(len(ls), 10)
         for e in ls[-compare_len:]:
             dis_ls.append(np.linalg.norm(emb - e))
-        dis = alpha(dis_ls, 0.5)
+        dis = alpha(dis_ls, 0.6)
     return dis
 
 
@@ -201,7 +199,6 @@ def process_faces(face_emb_pos_all, faces,
     lock.release()
 
 
-@jit
 def match_faces(faces_emb_pos):
     # print("A new alpha_ls: ({}, {})".format(len(faces_emb_pos), len(faces_in_camera)))
     alp_ls = np.zeros((len(faces_emb_pos), len(faces_in_camera)))
@@ -283,13 +280,6 @@ def now_time():
 
 
 def process(videoQue, alreadyQue, Mode, Pos, e):
-
-    # 加载数据库
-    try:
-        conn = pymysql.connect("localhost", "root", "admin123", "face_recognition")
-        cursor = conn.cursor()
-    except:
-        print("Fail to connect DB!")
 
     # 加载MTCNN与facenet
     sess, pnet, rnet, onet, images_placeholder, embeddings, phase_train_placeholder = load_graph()

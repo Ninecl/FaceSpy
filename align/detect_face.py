@@ -34,7 +34,6 @@ import tensorflow as tf
 import cv2
 import os
 import time
-from numba import jit
 
 def layer(op):
     """Decorator for composable network layers."""

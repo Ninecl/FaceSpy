@@ -183,7 +183,9 @@ def collect_cnt_person(alreadyQue, Mode):
                     min_idx = np.where(dis_ls == min_dis)[0][0]
                     label = labels[min_idx]
                     print(min_dis, min_idx, label)
-                    if min_dis <= 0.70:
+                    if min_dis <= 0.80 and min_idx < classes_num * 20:
+                        pro_ls[labels[min_idx]] += 1
+                    if min_dis <= 0.70 and min_idx >= classes_num * 20:
                         pro_ls[labels[min_idx]] += 1
                     # 如果人脸欧式距离极小，则判断这一定是同一张人脸，那么将这张人脸保存到本地的训练集中，用于更新训练集，提高模型准确率
                     if min_dis <= 0.50 and min_idx >= 20 * label and min_idx < 20 * label + 20:
@@ -203,15 +205,14 @@ def collect_cnt_person(alreadyQue, Mode):
                         else:
                             cv2.imwrite(update_img_path + "{}.jpg".format(nowTime + '_' + str(i)), update_img)
                 idx = np.where(pro_ls == np.max(pro_ls))[0][0]
-                print(pro_ls)
+                print(pro_ls, len(face.embs))
                 # print(pro_ls)
                 # print(len(predictions))
-                if pro_ls[idx] >= len(face.embs) // 2:
+                if pro_ls[idx] >= len(face.embs) // 3:
                     member_idx = idx
-                    if Mode == "IN":
-                        print("Member {} in.".format(names[member_idx]))
-                    else:
-                        print("Member {} out.".format(names[member_idx]))
+                    print("Member {} ".format(names[member_idx]) + Mode + '.')
+                else:
+                    print("Vistor " + Mode + '.')
                 # 将这条数据放入person_in_ls
                 # face_record.append(member_idx)
                 # person_in_ls.append(face_record)
@@ -237,14 +238,17 @@ def collect_cnt_person(alreadyQue, Mode):
                 # 时间
                 passTime = face.time[8: 14]
                 # 执行数据库操作
-                cursor.execute(sql, (face.id, passTime, pymysql.Binary(img), Name, Date, str(member_idx)))
-                if member_idx > -1:
-                    if Mode == "IN":
-                        sql = "update members set inside = 1 where ID = {}".format(member_idx)
-                    else:
-                        sql = "update members set inside = 0 where ID = {}".format(member_idx)
-                    cursor.execute(sql)
-            conn.commit()
+                try:
+                    cursor.execute(sql, (face.id, passTime, pymysql.Binary(img), Name, Date, str(member_idx)))
+                    if member_idx > -1:
+                        if Mode == "IN":
+                            sql = "update members set inside = 1 where ID = {}".format(member_idx)
+                        else:
+                            sql = "update members set inside = 0 where ID = {}".format(member_idx)
+                        cursor.execute(sql)
+                    conn.commit()
+                except:
+                    conn.rollback()
             allPassList.clear()
             leftNoneCnt = 0
             rightNoneCnt = 0
