@@ -90,7 +90,7 @@ def check(face, mode, pos, cnt):
     else:
         dir_path += "OUT/"
         if pos == "LEFT":
-            dir_path += "Right/" + face.time + '_' + str(cnt)
+            dir_path += "Left/" + face.time + '_' + str(cnt)
             if face.path[0][0] <= 300 and face.path[-1][0] >= 500:
                 check = True
         elif pos == "MIDDLE":
@@ -98,7 +98,7 @@ def check(face, mode, pos, cnt):
             if face.path[0][1] <= 300 and face.path[-1][1] >= 550:
                 check = True
         elif pos == "RIGHT":
-            dir_path += "Left/" + face.time + '_' + str(cnt)
+            dir_path += "Right/" + face.time + '_' + str(cnt)
             if face.path[0][0] >= 1000 and face.path[-1][0] <= 800:
                 check = True
 

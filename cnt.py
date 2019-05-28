@@ -121,10 +121,7 @@ def collect_cnt_person(alreadyQue, Mode):
 
     # 无限循环读列表（注意，这个操作每两秒一次，最后设置了阻塞2s）
     while True:
-        # 连接数据库，当识别出某人离开时，对数据库中的记录进行操作, 这里每次采用一个新的连接，否则会出现问题
-        conn = pymysql.connect("39.98.90.118", "zyf", "zyf123456", "face_recognition", charset="utf8")
-        cursor = conn.cursor()
-        # 首先判断是否是新的一天, 如果是, 则id_cnt重置
+                # 首先判断是否是新的一天, 如果是, 则id_cnt重置
         lastTime = nowTime
         nowTime = now_time()
         if lastTime[6: 8] != nowTime[6: 8]:
@@ -169,7 +166,7 @@ def collect_cnt_person(alreadyQue, Mode):
             else:
                 print("OUT", allPassList)
             for face_record in allPassList:
-                if face_record[2] < 2 or not face_record[1]:
+                if face_record[2] < 2:
                     continue
                 id_cnt += 1
                 face = face_record[0]
@@ -239,6 +236,9 @@ def collect_cnt_person(alreadyQue, Mode):
                 passTime = face.time[8: 14]
                 # 执行数据库操作
                 try:
+                    # 连接数据库，当识别出某人离开时，对数据库中的记录进行操作, 这里每次采用一个新的连接，否则会出现问题
+                    conn = pymysql.connect("39.98.90.118", "zyf", "zyf123456", "face_recognition", charset="utf8")
+                    cursor = conn.cursor()
                     cursor.execute(sql, (face.id, passTime, pymysql.Binary(img), Name, Date, str(member_idx)))
                     if member_idx > -1:
                         if Mode == "IN":
@@ -246,7 +246,11 @@ def collect_cnt_person(alreadyQue, Mode):
                         else:
                             sql = "update members set inside = 0 where ID = {}".format(member_idx)
                         cursor.execute(sql)
+                    if not face_record[1]:
+                        sql = "INSERT INTO waring(Name, Time, WarningType) VALUES (%s, %s, %s)"
+                        cursor.execute(sql, (Name, face.time, 3))
                     conn.commit()
+                    conn.close()
                 except:
                     conn.rollback()
             allPassList.clear()
@@ -313,5 +317,4 @@ def collect_cnt_person(alreadyQue, Mode):
         else:
             print("There are {} person(s) have came out.".format(id_cnt))
         # print(person_in_ls)
-        conn.close()
         time.sleep(2)
